@@ -98,6 +98,7 @@ sources:
           - name: objectid
             description: Unique identifier for the record
             tests:
+              - unique 
               - not_null
 
           - name: submission_timestamp
