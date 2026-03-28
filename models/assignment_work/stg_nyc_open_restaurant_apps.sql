@@ -67,11 +67,10 @@ cleaned AS (
    FROM source
 
    WHERE objectid IS NOT NULL
-   AND submission_timestamp IS NOT NULL
 
    QUALIFY ROW_NUMBER() OVER (
        PARTITION BY objectid
-       ORDER BY submission_timestamp DESC
+       ORDER BY submission_timestamp DESC NULLS LAST 
    ) = 1
 )
 
