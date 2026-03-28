@@ -2,7 +2,7 @@
 -- One row per application
 
 WITH source AS (
-   SELECT * FROM {{ source('raw', 'open_restaurant_applications') }}
+   SELECT * FROM {{ source('raw', 'nyc_open_restaurant_apps') }}
 ), -- Easier to refer to the dbt reference to a long name table this way
 
 cleaned AS (
