@@ -2,12 +2,11 @@
 -- One row per application
 
 WITH source AS (
-   SELECT * FROM {{ source('raw', 'open_restaurant_applications') }}
-), -- Easier to refer to the dbt reference to a long name table this way
+   SELECT * FROM {{ source('raw', 'source_nyc_open_restaurant_apps') }}
+),
 
 cleaned AS (
    SELECT
-       -- Get all columns except ones we are transforming
        * EXCEPT (
            objectid,
            submission_timestamp,
@@ -22,18 +21,18 @@ cleaned AS (
            longitude
        ),
 
-       -- Identifiers
+       -- Identifier
        CAST(objectid AS STRING) AS application_id,
 
-       -- Date/Time
+       -- Timestamp
        CAST(submission_timestamp AS TIMESTAMP) AS submission_timestamp,
 
-       -- Business details
+       -- Business info
        CAST(restaurant_name AS STRING) AS restaurant_name,
        CAST(legal_business_name AS STRING) AS legal_business_name,
        CAST(doing_business_as_dba AS STRING) AS dba_name,
 
-       -- Location - standardized borough
+       -- Borough cleaning
        CASE
            WHEN UPPER(TRIM(borough)) IN ('MANHATTAN', 'NEW YORK COUNTY') THEN 'Manhattan'
            WHEN UPPER(TRIM(borough)) IN ('BRONX', 'THE BRONX') THEN 'Bronx'
@@ -47,7 +46,7 @@ cleaned AS (
        CAST(building_number AS STRING) AS building_number,
        CAST(street AS STRING) AS street,
 
-       -- Clean ZIP (same logic as DOT)
+       -- ZIP cleaning
        CASE
            WHEN UPPER(TRIM(zip)) IN ('N/A', 'NA') THEN NULL
            WHEN LENGTH(TRIM(zip)) = 5 THEN TRIM(zip)
@@ -58,7 +57,7 @@ cleaned AS (
            ELSE NULL
        END AS zip,
 
-       -- Coordinates (BigQuery-safe types)
+       -- Coordinates (BigQuery safe)
        CAST(latitude AS NUMERIC) AS latitude,
        CAST(longitude AS NUMERIC) AS longitude,
 
@@ -67,11 +66,9 @@ cleaned AS (
 
    FROM source
 
-   -- Filters (lighter than DOT)
    WHERE objectid IS NOT NULL
    AND submission_timestamp IS NOT NULL
 
-   -- Deduplicate
    QUALIFY ROW_NUMBER() OVER (
        PARTITION BY objectid
        ORDER BY submission_timestamp DESC
